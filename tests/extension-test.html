@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Extension Test Page</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .test-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background-image: url('https://place-hold.it/1600x900/#ccc/#111');
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 20px;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.3);
+            z-index: 10;
+        }
+        
+        .content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .instructions {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .debug-info {
+            background-color: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h2>Extension Test Instructions</h2>
+        <p>1. Make sure the extension is loaded in Chrome</p>
+        <p>2. Right-click anywhere on the gray area below</p>
+        <p>3. Select "Copy background image URL" from the context menu</p>
+        <p>4. The URL should be copied to your clipboard</p>
+        <p>5. Open console (F12) to see debug information</p>
+    </div>
+    
+    <div class="test-container">
+        <div class="overlay"></div>
+        <div class="content">
+            <h3>Test Area</h3>
+            <p>Right-click here to test the extension</p>
+            <p>Expected URL: https://place-hold.it/1600x900/#ccc/#111</p>
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debug-info">
+        Debug information will appear here...
+    </div>
+    
+    <script>
+        // Add debugging to monitor the extension's behavior
+        let debugInfo = document.getElementById('debug-info');
+        
+        document.addEventListener('contextmenu', (event) => {
+            debugInfo.textContent += `Right-click detected at coordinates: (${event.clientX}, ${event.clientY})\\n`;
+            
+            // Show what elements are at these coordinates
+            const elements = document.elementsFromPoint(event.clientX, event.clientY);
+            debugInfo.textContent += `Elements at coordinates: ${elements.length}\\n`;
+            
+            elements.forEach((el, index) => {
+                const style = window.getComputedStyle(el);
+                debugInfo.textContent += `  ${index}: ${el.tagName}.${el.className} - background: ${style.backgroundImage} - z-index: ${style.zIndex}\\n`;
+            });
+            
+            debugInfo.textContent += '\\n';
+        });
+        
+        // Monitor clipboard operations
+        navigator.clipboard.readText().then(text => {
+            debugInfo.textContent += `Current clipboard: ${text}\\n`;
+        }).catch(err => {
+            debugInfo.textContent += `Could not read clipboard: ${err}\\n`;
+        });
+        
+        // Monitor for messages from the extension
+        console.log('Test page loaded. Extension should now be able to detect background images.');
+    </script>
+</body>
+</html>

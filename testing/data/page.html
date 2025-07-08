@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      width: 100%;
+      box-sizing: border-box;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .container {
+      position: relative;
+      max-width: 800px;
+      overflow: hidden;
+      margin: 32px auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <main style="z-index: 2;position: relative;display: flex;flex-direction: column;justify-content: center;align-items: center;width: 100%;background-color: rgba(255, 255, 255, 0.8);padding: 20px;box-sizing: border-box;">
+      <div>
+        <h1>main content</h1>
+        <p>lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.</p>
+      </div>
+    </main>
+    <div style="position: absolute;left:0;top:0;background: no-repeat center;background-image: url('https://place-hold.it/1600x900/#ccc/#111');z-index: 1;width: 100%;height:100%;"></div>
+  </div>
+</body>
+</html>

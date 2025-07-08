@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Copy Background Image URL",
+  "version": "1.0.0",
+  "description": "Copy background image URLs via right-click context menu",
+  "permissions": [
+    "contextMenus",
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "dist/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "Copy Background Image URL"
+  }
+}

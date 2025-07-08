@@ -1,0 +1,22 @@
+{
+  "name": "copy-background-image-url",
+  "version": "1.0.0",
+  "description": "Chrome extension to copy background image URLs via context menu",
+  "main": "dist/background.js",
+  "scripts": {
+    "build": "tsc --project tsconfig.prod.json",
+    "build:dev": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "test": "npm run build:dev && node tests/simple-logic-test.js",
+    "test:playwright": "playwright test"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "@playwright/test": "^1.40.0",
+    "typescript": "^5.3.3"
+  },
+  "keywords": ["chrome-extension", "background-image", "context-menu"],
+  "author": "",
+  "license": "MIT"
+}

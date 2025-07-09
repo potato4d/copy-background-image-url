@@ -114,55 +114,42 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
       }
     }
     
-    // Strategy 2: Temporarily hide overlapping elements to check what's behind
-    debugInfo.strategy = 'pointer-events-manipulation';
-    const originalStyles: Array<{element: Element, pointerEvents: string}> = [];
-    const elementsToHide = elements.slice(0, -1); // Don't hide the deepest element
+    // Strategy 2: Check elements by spatial analysis (no DOM modification)
+    debugInfo.strategy = 'spatial-analysis';
     
-    try {
-      // Hide elements one by one and check for background images
-      for (let i = 0; i < elementsToHide.length; i++) {
-        const element = elementsToHide[i];
-        const htmlElement = element as HTMLElement;
-        originalStyles.push({
-          element: element,
-          pointerEvents: htmlElement.style.pointerEvents
-        });
-        htmlElement.style.pointerEvents = 'none';
-        
-        const elementBehind = document.elementFromPoint(x, y);
-        if (elementBehind) {
-          const imageUrl = getElementImageUrl(elementBehind);
-          if (imageUrl) {
-            // Restore styles before returning
-            originalStyles.forEach(({ element, pointerEvents }) => {
-              (element as HTMLElement).style.pointerEvents = pointerEvents;
-            });
-            return {
-              success: true,
-              url: imageUrl,
-              debugInfo
-            };
-          }
+    // Get element bounding boxes and check elements that might be behind others
+    const elementsWithBounds = elements.map(element => ({
+      element,
+      rect: element.getBoundingClientRect(),
+      zIndex: parseInt(window.getComputedStyle(element).zIndex) || 0
+    }));
+    
+    // Sort by z-index to check background elements first
+    elementsWithBounds.sort((a, b) => a.zIndex - b.zIndex);
+    
+    for (const { element, rect } of elementsWithBounds) {
+      // Check if the click coordinates are within this element's bounds
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        const imageUrl = getElementImageUrl(element);
+        if (imageUrl) {
+          return {
+            success: true,
+            url: imageUrl,
+            debugInfo
+          };
         }
       }
-    } finally {
-      // Always restore styles
-      originalStyles.forEach(({ element, pointerEvents }) => {
-        (element as HTMLElement).style.pointerEvents = pointerEvents;
-      });
     }
     
-    // Strategy 3: Check elements by z-index order (lower z-index first for background images)
-    debugInfo.strategy = 'z-index-sorting';
-    const sortedElements = [...elements].sort((a, b) => {
-      const aZ = parseInt(window.getComputedStyle(a).zIndex) || 0;
-      const bZ = parseInt(window.getComputedStyle(b).zIndex) || 0;
-      return aZ - bZ; // Lower z-index first for background images
-    });
+    // Strategy 3: Check parent elements for background images
+    debugInfo.strategy = 'parent-traversal';
     
-    for (const element of sortedElements) {
-      const imageUrl = getElementImageUrl(element);
+    // Start with the deepest element and traverse up the DOM tree
+    const deepestElement = elements[elements.length - 1];
+    let currentElement = deepestElement?.parentElement;
+    
+    while (currentElement && currentElement !== document.body) {
+      const imageUrl = getElementImageUrl(currentElement);
       if (imageUrl) {
         return {
           success: true,
@@ -170,14 +157,30 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
           debugInfo
         };
       }
+      currentElement = currentElement.parentElement;
     }
     
-    // Strategy 4: Check child elements recursively
-    debugInfo.strategy = 'child-element-check';
-    for (const element of elements) {
-      const descendants = Array.from(element.querySelectorAll('*'));
-      for (const descendant of descendants) {
-        const imageUrl = getElementImageUrl(descendant);
+    // Strategy 4: Check elements within viewport bounds (read-only analysis)
+    debugInfo.strategy = 'viewport-bounds-check';
+    
+    // Get all elements with background images within a reasonable area around the click
+    const searchRadius = 10;
+    const searchArea = {
+      left: x - searchRadius,
+      right: x + searchRadius,
+      top: y - searchRadius,
+      bottom: y + searchRadius
+    };
+    
+    const allElements = Array.from(document.querySelectorAll('*'));
+    for (const element of allElements) {
+      const rect = element.getBoundingClientRect();
+      
+      // Check if element intersects with search area
+      if (rect.left <= searchArea.right && rect.right >= searchArea.left &&
+          rect.top <= searchArea.bottom && rect.bottom >= searchArea.top) {
+        
+        const imageUrl = getElementImageUrl(element);
         if (imageUrl) {
           return {
             success: true,

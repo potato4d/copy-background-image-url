@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Copy background image URLs via right-click context menu",
   "permissions": [
+    "clipboardWrite",
     "contextMenus",
     "activeTab"
   ],

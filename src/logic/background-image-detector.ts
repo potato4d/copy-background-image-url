@@ -39,6 +39,29 @@ export function getElementBackgroundImage(element: Element): string | null {
   }
 }
 
+export function getElementImageUrl(element: Element): string | null {
+  try {
+    // Check if it's an IMG element with src attribute
+    if (element.tagName === 'IMG') {
+      const imgElement = element as HTMLImageElement;
+      if (imgElement.src) {
+        return imgElement.src;
+      }
+    }
+    
+    // Check for background image
+    const bgUrl = getElementBackgroundImage(element);
+    if (bgUrl) {
+      return bgUrl;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting element image URL:', error);
+    return null;
+  }
+}
+
 export function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImageResult {
   // Make function available globally for testing
   if (typeof window !== 'undefined') {
@@ -69,11 +92,11 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
       };
     }
     
-    // Strategy 1: Check all elements at coordinates for background images
+    // Strategy 1: Check all elements at coordinates for images (both background and img elements)
     debugInfo.strategy = 'direct-check';
     for (const element of elements) {
       const style = window.getComputedStyle(element);
-      const bgUrl = getElementBackgroundImage(element);
+      const imageUrl = getElementImageUrl(element);
       
       debugInfo.elementsChecked.push({
         tagName: element.tagName,
@@ -82,10 +105,10 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
         zIndex: style.zIndex
       });
       
-      if (bgUrl) {
+      if (imageUrl) {
         return {
           success: true,
-          url: bgUrl,
+          url: imageUrl,
           debugInfo
         };
       }
@@ -109,15 +132,15 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
         
         const elementBehind = document.elementFromPoint(x, y);
         if (elementBehind) {
-          const bgUrl = getElementBackgroundImage(elementBehind);
-          if (bgUrl) {
+          const imageUrl = getElementImageUrl(elementBehind);
+          if (imageUrl) {
             // Restore styles before returning
             originalStyles.forEach(({ element, pointerEvents }) => {
               (element as HTMLElement).style.pointerEvents = pointerEvents;
             });
             return {
               success: true,
-              url: bgUrl,
+              url: imageUrl,
               debugInfo
             };
           }
@@ -139,19 +162,35 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
     });
     
     for (const element of sortedElements) {
-      const bgUrl = getElementBackgroundImage(element);
-      if (bgUrl) {
+      const imageUrl = getElementImageUrl(element);
+      if (imageUrl) {
         return {
           success: true,
-          url: bgUrl,
+          url: imageUrl,
           debugInfo
         };
       }
     }
     
+    // Strategy 4: Check child elements recursively
+    debugInfo.strategy = 'child-element-check';
+    for (const element of elements) {
+      const descendants = Array.from(element.querySelectorAll('*'));
+      for (const descendant of descendants) {
+        const imageUrl = getElementImageUrl(descendant);
+        if (imageUrl) {
+          return {
+            success: true,
+            url: imageUrl,
+            debugInfo
+          };
+        }
+      }
+    }
+    
     return {
       success: false,
-      error: 'No background image found at coordinates',
+      error: 'No image found at coordinates',
       debugInfo
     };
     

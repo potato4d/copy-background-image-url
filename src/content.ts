@@ -40,6 +40,29 @@ function getElementBackgroundImage(element: Element): string | null {
   }
 }
 
+function getElementImageUrl(element: Element): string | null {
+  try {
+    // Check if it's an IMG element with src attribute
+    if (element.tagName === 'IMG') {
+      const imgElement = element as HTMLImageElement;
+      if (imgElement.src) {
+        return imgElement.src;
+      }
+    }
+    
+    // Check for background image
+    const bgUrl = getElementBackgroundImage(element);
+    if (bgUrl) {
+      return bgUrl;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting element image URL:', error);
+    return null;
+  }
+}
+
 function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImageResult {
   const debugInfo = {
     coordinates: { x, y },
@@ -66,11 +89,11 @@ function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImage
       };
     }
     
-    // Strategy 1: Check all elements at coordinates for background images
+    // Strategy 1: Check all elements at coordinates for images (both background and img elements)
     debugInfo.strategy = 'direct-check';
     for (const element of elements) {
       const style = window.getComputedStyle(element);
-      const bgUrl = getElementBackgroundImage(element);
+      const imageUrl = getElementImageUrl(element);
       
       debugInfo.elementsChecked.push({
         tagName: element.tagName,
@@ -79,10 +102,10 @@ function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImage
         zIndex: style.zIndex
       });
       
-      if (bgUrl) {
+      if (imageUrl) {
         return {
           success: true,
-          url: bgUrl,
+          url: imageUrl,
           debugInfo
         };
       }
@@ -106,15 +129,15 @@ function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImage
         
         const elementBehind = document.elementFromPoint(x, y);
         if (elementBehind) {
-          const bgUrl = getElementBackgroundImage(elementBehind);
-          if (bgUrl) {
+          const imageUrl = getElementImageUrl(elementBehind);
+          if (imageUrl) {
             // Restore styles before returning
             originalStyles.forEach(({ element, pointerEvents }) => {
               (element as HTMLElement).style.pointerEvents = pointerEvents;
             });
             return {
               success: true,
-              url: bgUrl,
+              url: imageUrl,
               debugInfo
             };
           }
@@ -136,19 +159,35 @@ function findBackgroundImageAtCoordinates(x: number, y: number): BackgroundImage
     });
     
     for (const element of sortedElements) {
-      const bgUrl = getElementBackgroundImage(element);
-      if (bgUrl) {
+      const imageUrl = getElementImageUrl(element);
+      if (imageUrl) {
         return {
           success: true,
-          url: bgUrl,
+          url: imageUrl,
           debugInfo
         };
       }
     }
     
+    // Strategy 4: Check child elements recursively
+    debugInfo.strategy = 'child-element-check';
+    for (const element of elements) {
+      const descendants = Array.from(element.querySelectorAll('*'));
+      for (const descendant of descendants) {
+        const imageUrl = getElementImageUrl(descendant);
+        if (imageUrl) {
+          return {
+            success: true,
+            url: imageUrl,
+            debugInfo
+          };
+        }
+      }
+    }
+    
     return {
       success: false,
-      error: 'No background image found at coordinates',
+      error: 'No image found at coordinates',
       debugInfo
     };
     
@@ -183,16 +222,45 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Background image detection result:', result);
     
     if (result.success && result.url) {
-      chrome.runtime.sendMessage({
-        action: 'copyToClipboard',
-        url: result.url
-      }, (response) => {
-        if (response?.success) {
+      // Try to copy directly in content script first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(result.url).then(() => {
           console.log('Background image URL copied successfully:', result.url);
-        } else {
-          console.error('Failed to copy background image URL:', response?.error || 'Unknown error');
-        }
-      });
+        }).catch((error) => {
+          console.error('Failed to copy to clipboard:', error);
+          // Fallback to background script
+          chrome.runtime.sendMessage({
+            action: 'copyToClipboard',
+            url: result.url
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.error('Runtime error:', chrome.runtime.lastError.message);
+              return;
+            }
+            if (response?.success) {
+              console.log('Background image URL copied successfully via background:', result.url);
+            } else {
+              console.error('Failed to copy background image URL:', response?.error || 'Unknown error');
+            }
+          });
+        });
+      } else {
+        // Fallback to background script
+        chrome.runtime.sendMessage({
+          action: 'copyToClipboard',
+          url: result.url
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Runtime error:', chrome.runtime.lastError.message);
+            return;
+          }
+          if (response?.success) {
+            console.log('Background image URL copied successfully via background:', result.url);
+          } else {
+            console.error('Failed to copy background image URL:', response?.error || 'Unknown error');
+          }
+        });
+      }
       
       sendResponse({ found: true, url: result.url });
     } else {

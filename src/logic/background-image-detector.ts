@@ -67,6 +67,15 @@ export function findBackgroundImageAtCoordinates(x: number, y: number): Backgrou
   if (typeof window !== 'undefined') {
     (window as any).findBackgroundImageAtCoordinates = findBackgroundImageAtCoordinates;
   }
+  
+  // Make functions available as CommonJS exports for tests
+  if (typeof (globalThis as any).exports !== 'undefined') {
+    const exp = (globalThis as any).exports;
+    exp.extractBackgroundImageUrl = extractBackgroundImageUrl;
+    exp.getElementBackgroundImage = getElementBackgroundImage;
+    exp.getElementImageUrl = getElementImageUrl;
+    exp.findBackgroundImageAtCoordinates = findBackgroundImageAtCoordinates;
+  }
   const debugInfo = {
     coordinates: { x, y },
     elementsFound: 0,

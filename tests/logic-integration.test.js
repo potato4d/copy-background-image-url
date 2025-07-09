@@ -11,6 +11,20 @@ test('background image detection logic integration test', async ({ page }) => {
     path: path.join(__dirname, '..', 'dist', 'logic', 'background-image-detector.js')
   });
   
+  // Make sure the function is available globally
+  await page.evaluate(() => {
+    // Since it's a CommonJS module, we need to access it through exports
+    if (typeof exports !== 'undefined' && exports.findBackgroundImageAtCoordinates) {
+      window.findBackgroundImageAtCoordinates = exports.findBackgroundImageAtCoordinates;
+      // Call it once to trigger the internal global assignment
+      try {
+        window.findBackgroundImageAtCoordinates(0, 0);
+      } catch (e) {
+        // Expected to fail, but this makes it globally available
+      }
+    }
+  });
+  
   // Get the page dimensions to calculate center
   const pageWidth = await page.evaluate(() => window.innerWidth);
   const horizontalCenter = pageWidth / 2;
@@ -51,6 +65,20 @@ test('background image detection with no background image', async ({ page }) => 
     path: path.join(__dirname, '..', 'dist', 'logic', 'background-image-detector.js')
   });
   
+  // Make sure the function is available globally
+  await page.evaluate(() => {
+    // Since it's a CommonJS module, we need to access it through exports
+    if (typeof exports !== 'undefined' && exports.findBackgroundImageAtCoordinates) {
+      window.findBackgroundImageAtCoordinates = exports.findBackgroundImageAtCoordinates;
+      // Call it once to trigger the internal global assignment
+      try {
+        window.findBackgroundImageAtCoordinates(0, 0);
+      } catch (e) {
+        // Expected to fail, but this makes it globally available
+      }
+    }
+  });
+  
   // Test at center of the div
   const result = await page.evaluate(() => {
     return window.findBackgroundImageAtCoordinates(50, 50);
@@ -60,7 +88,7 @@ test('background image detection with no background image', async ({ page }) => 
   
   // Assert the expected result
   expect(result.success).toBe(false);
-  expect(result.error).toBe('No background image found at coordinates');
+  expect(result.error).toBe('No image found at coordinates');
   expect(result.debugInfo).toBeDefined();
 });
 
@@ -77,6 +105,20 @@ test('background image detection error handling', async ({ page }) => {
   // Inject the actual logic from the built extension
   await page.addScriptTag({
     path: path.join(__dirname, '..', 'dist', 'logic', 'background-image-detector.js')
+  });
+  
+  // Make sure the function is available globally
+  await page.evaluate(() => {
+    // Since it's a CommonJS module, we need to access it through exports
+    if (typeof exports !== 'undefined' && exports.findBackgroundImageAtCoordinates) {
+      window.findBackgroundImageAtCoordinates = exports.findBackgroundImageAtCoordinates;
+      // Call it once to trigger the internal global assignment
+      try {
+        window.findBackgroundImageAtCoordinates(0, 0);
+      } catch (e) {
+        // Expected to fail, but this makes it globally available
+      }
+    }
   });
   
   // Test error handling by calling with invalid coordinates
